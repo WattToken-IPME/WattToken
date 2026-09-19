@@ -1,131 +1,103 @@
-import React from 'react';
-import {StyleSheet, Button, View, Text, Alert} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {TouchableOpacity} from 'react-native';
-import {StatusBar } from 'expo-status-bar';
-//import {SafeAreaView} from 'react-native-safe-area-context';
-//import { StyleSheet, Text, View } from 'react-native';
+import React, {useState} from 'react';
+import {Alert, Text, TouchableOpacity, View} from 'react-native';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
+import {StatusBar} from 'expo-status-bar';
+import {ethers} from 'ethers';
 
-import { NavigationContainer } from '@react-navigation/native';
-//import { createStackNavigator } from '@react-navigation/stack';
-//import HomeScreen from './HomeScreen';
-//import DetailsScreen from './DetailsScreen';
+import styles from '../../App.styles';
 
-//import BuyOrSell from './page2.js';
+const ARBITRUM_SEPOLIA = {
+    chainId: '0x66eee',
+    chainName: 'Arbitrum Sepolia',
+    nativeCurrency: {
+        name: 'Ether',
+        symbol: 'ETH',
+        decimals: 18,
+    },
+    rpcUrls: ['https://sepolia-rollup.arbitrum.io/rpc'],
+    blockExplorerUrls: ['https://sepolia.arbiscan.io'],
+};
 
-/*
-// Import everything
-import { ethers } from "ethers";
+const getErrorCode = (error) => error?.code ?? error?.info?.error?.code ?? error?.data?.originalError?.code;
 
-// Import just a few select items
-import { BrowserProvider, parseUnits } from "ethers";
+const switchToArbitrumSepolia = async (ethereum) => {
+    try {
+        await ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{chainId: ARBITRUM_SEPOLIA.chainId}],
+        });
+    } catch (error) {
+        if (Number(getErrorCode(error)) !== 4902) {
+            throw error;
+        }
 
-// Import from a specific export
-import { HDNodeWallet } from "ethers/wallet";
-*/
+        await ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [ARBITRUM_SEPOLIA],
+        });
 
-
-//import { View, Text, Button } from "react-native";
-import styles from "../../App.styles";
-
-
-// Import everything
-import { ethers } from "ethers";
-
-// Import just a few select items
-import { BrowserProvider, parseUnits } from "ethers";
-
-// Import from a specific export
-import { HDNodeWallet } from "ethers/wallet";
-
-<script type="module">
-import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
-</script>
-
+        await ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{chainId: ARBITRUM_SEPOLIA.chainId}],
+        });
+    }
+};
 
 const HomeScreen = ({navigation}) => {
+    const [isConnecting, setIsConnecting] = useState(false);
 
-    let web3 = null;
-    let provider = null;
-    let signer = null;
+    const connectWallet = async () => {
+        const ethereum = typeof window !== 'undefined' ? window.ethereum : null;
 
-async function connect () {
-if (window.ethereum == null) {
+        if (!ethereum) {
+            Alert.alert('Гаманець не знайдено', 'Встановіть MetaMask, щоб підключити гаманець.');
+            return;
+        }
 
-    // If MetaMask is not installed, we use the default provider,
-    // which is backed by a variety of third-party services (such
-    // as INFURA). They do not have private keys installed,
-    // so they only have read-only access
-    console.log("MetaMask not installed; using read-only defaults")
-    provider = ethers.getDefaultProvider()
+        setIsConnecting(true);
 
-} else {
-    console.log("MetaMask  installed")
-    // Connect to the MetaMask EIP-1193 object. This is a standard
-    // protocol that allows Ethers access to make all read-only
-    // requests through MetaMask.
-    provider = new ethers.BrowserProvider(window.ethereum)
+        try {
+            await ethereum.request({method: 'eth_requestAccounts'});
+            await switchToArbitrumSepolia(ethereum);
 
-    // It also provides an opportunity to request access to write
-    // operations, which will be performed by the private key
-    // that MetaMask manages for the user.
-    signer = await provider.getSigner();
-    console.log(signer.address);
-   //Adress = signer.address;
-   //console.log(Adress);
-}
-}
+            // Create the provider after switching networks so ethers uses the current chain.
+            const provider = new ethers.BrowserProvider(ethereum);
+            const signer = await provider.getSigner();
+            const walletAddress = await signer.getAddress();
 
-  function loginWallet(){
-    console.log('Button pressed 1');
-    connect(); 
-    //console.log(Adress);
+            navigation.navigate('BuyOrSell', {walletAddress});
+        } catch (error) {
+            console.error('Wallet connection failed:', error);
+            const message = Number(getErrorCode(error)) === 4001
+                ? 'Підключення гаманця або зміну мережі було відхилено.'
+                : 'Не вдалося підключити гаманець. Спробуйте ще раз.';
+            Alert.alert('Помилка підключення', message);
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
     return (
-        // connect()
-    console.log('Button pressed 2')
+        <SafeAreaProvider>
+            <SafeAreaView style={styles.mainContainer}>
+                <View style={styles.container}>
+                    <Text style={styles.title}>Wattoken</Text>
 
-    )
-  }
+                    <TouchableOpacity
+                        disabled={isConnecting}
+                        onPress={connectWallet}
+                        style={[styles.button, isConnecting && styles.buttonDisabled]}
+                    >
+                        <Text style={styles.buttonText}>
+                            {isConnecting ? 'Підключення...' : 'Вхід через гаманець'}
+                        </Text>
+                    </TouchableOpacity>
 
-   return (
-      <SafeAreaProvider>
-       <SafeAreaView style={styles.mainContainer}>
-        <View style={styles.container}>
-            <Text style={styles.title}>Wattoken</Text>
-            {/*<Text>Open up App.js to start working on your app!</Text>*/}
-            {/*<Button style={styles.button}*/}
-
-        <TouchableOpacity onPress={() => {loginWallet(); navigation.navigate('BuyOrSell');}} 
-                          style={styles.button}>
-        <Text style={styles.buttonText}>Вхід через гаманець</Text>
-        </TouchableOpacity>
-
-          <StatusBar style="auto" />
-        </View>
-        </SafeAreaView>
+                    <StatusBar style="auto" />
+                </View>
+            </SafeAreaView>
         </SafeAreaProvider>
-      ); 
-  
-      /*
-  return (
-        <View>
-            <Text style={styles.title}>Wattoken</Text>
-           
-
-            <Button
-                title="Вхід через гаманець"
-                onPress={() => {loginWallet();
-                    navigation.navigate('BuyOrSell');}
-                }
-            />
-
-        </View>
     );
-    */
 };
 
 export default HomeScreen;
-
- 

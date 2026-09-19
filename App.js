@@ -1,5 +1,4 @@
 import 'react-native-gesture-handler';
-import { SafeAreaView } from "react-native";
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -11,7 +10,6 @@ import HomeScreen from "./pages/HomeScreen";
 import BuyOrSellScreen from "./pages/BuyOrSellScreen";
 import BuyScreen from "./pages/BuyScreen";
 import SellScreen from "./pages/SellScreen";
-import styles from "./App.styles";
 
 
 
@@ -27,16 +25,14 @@ export default function App() {
 
         /* Drawer Navigation */
     <SafeAreaProvider>
-        <SafeAreaView style={styles.mainContainer}>
-            <NavigationContainer>
-                <Drawer.Navigator initialRouteName="Home">
-                    <Drawer.Screen name="Home" component={HomeScreen}/>
-                    <Drawer.Screen name="BuyOrSell" component={BuyOrSellScreen} />
-                    <Drawer.Screen name="Buy" component={BuyScreen} />
-                    <Drawer.Screen name="Sell" component={SellScreen} />
-                </Drawer.Navigator>
-            </NavigationContainer>
-        </SafeAreaView>
+        <NavigationContainer>
+            <Drawer.Navigator initialRouteName="Home">
+                <Drawer.Screen name="Home" component={HomeScreen}/>
+                <Drawer.Screen name="BuyOrSell" component={BuyOrSellScreen} />
+                <Drawer.Screen name="Buy" component={BuyScreen} />
+                <Drawer.Screen name="Sell" component={SellScreen} />
+            </Drawer.Navigator>
+        </NavigationContainer>
     </SafeAreaProvider>
         /* Tab Navigation */
         // <SafeAreaView style={styles.mainContainer}>
